@@ -1,0 +1,30 @@
+前端页面gxhtml项目
+
+index_gis_getXY.html				用来获取点的坐标，可设置多个点的坐标
+index_gis_show_linestring.html		根据获取的坐标画直线（已有现成的例子）
+index_gis_show_setInterval.html		根据定时进行坐标动态颜色的变化（后期颜色变换的条件为后台查询出数据级别）
+index_gis_show.html					图片覆盖物显示在地图的上层
+index_gis.html						最基本的地图展示
+
+
+在地图上画图的2种方式
+	①直接在图片上画图，例子在	index_gis_show_setInterval.html
+	②根据坐标点在覆盖物上画图，例子在index_gis_show_linestring.html
+	
+图标的实现方式
+	根据svg图在网站https://icomoon.io/app/#/select上将svg转换成字体，
+	在项目中直接引用字体，设置字体的颜色，就可以实现图标的变色
+
+关于前后台交互使用的方式
+	jsp中调用ajax，在e6700项目中图表charts文件夹中的jsp文件中有现成的例子
+	后台代码与其他模块一致就行
+	
+
+openlayers API文档
+https://openlayers.org/en/latest/apidoc/module-ol_style_Fill-Fill.html
+openlayers 教学文档
+http://weilin.me/ol3-primer/ch03/03-02.html
+openlayers 事例
+https://openlayers.org/en/latest/examples/draw-features.html
+坐标系转换
+https://www.cnblogs.com/dullfish/p/6617840.html

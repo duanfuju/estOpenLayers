@@ -1,0 +1,237 @@
+<!Doctype html>
+<html xmlns=http://www.w3.org/1999/xhtml>
+<head>                  
+    <meta http-equiv=Content-Type content="text/html;charset=utf-8">
+    <meta http-equiv=X-UA-Compatible content="IE=edge,chrome=1">
+    <meta content=always name=referrer>
+    <title>OpenLayers 3地图示例</title>
+    <link href="css/icon/style.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/jquery-2.1.1.js" ></script>
+    <link href="js/openLayers/ol.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/openLayers/ol.js" charset="utf-8"></script>
+</head>
+
+<body>
+	<div class="icon-location" style="color: red"></div>
+	<input type="button" value="保存图片" onclick="save()" />
+	<input type="button" value="变色" onclick="changeColor()" />
+	<div style="background-color: #999;"><span>当前绘制线的坐标：</span><span id='points'></span></div>
+	
+	<!--注意：需要设置tabindex，才能使div获得键盘事件-->
+	<!--<div id="map3" tabindex="0" style="width: 100%"></div>-->
+    <div id="map" style="width: 100%;height: 800px;"></div>
+
+
+
+<script type="text/javascript">
+	
+	var iconFont = 'icomoon';
+	var iconFontText = "icon-location"; // equates to fa-trash icon
+	var iconSize = 6 * 7;
+	var colors = ["rgba(102, 0, 255, 1)","rgba(0, 128, 0, 1)","rgba(0, 0, 255, 1)",
+					"rgba(255, 255, 0, 1)","rgba(255, 0, 0, 1)"];
+	var styles = [];
+	for (var i = 0; i < colors.length; i++) {
+		var style = new ol.style.Style({
+	        text: new ol.style.Text({
+	            font: 'Normal ' + iconSize + 'px ' + iconFont,
+	            text: iconFontText,
+	            fill: new ol.style.Fill({ color: colors[i] }),
+	            textBaseline: 'bottom'
+	        })
+	    });
+	    styles.push(style);
+	}
+
+
+
+
+	
+	
+	
+
+    // 地图设置中心，设置到成都，在本地离线地图 offlineMapTiles刚好有一张zoom为4的成都瓦片
+    var center = ol.proj.transform([104.06667, 30.66667], 'EPSG:4326', 'EPSG:3857');
+    // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    //var extent = [center[0]- 550*1000/2, center[1]-344*1000/2, center[0]+550*1000/2, center[1]+344*1000/2];
+
+	let imgWidth = 1366,imgHeight = 768,imgBg = "img/map20191129.png";
+	//let imgWidth = 550,imgHeight = 344,imgBg = "img/pandaBase.jpg";
+     // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    var extent2 = [center[0]- imgWidth*1000/2*2, 
+				    center[1]-imgHeight*1000/2*2, 
+				    center[0]+imgWidth*1000/2*2, 
+				    center[1]+imgHeight*1000/2*2];
+
+    //创建地图
+    var map2 = new ol.Map({
+    	 // 让所有的zoom开关都设置为false
+        interactions: ol.interaction.defaults({
+        	/*带有Zoom都是缩放*/
+            doubleClickZoom: false,
+            mouseWheelZoom: false,
+            shiftDragZoom: false,
+            pinchZoom:false,
+            altShiftDragRotate:false, 
+            pinchRotate:false,
+            dragPan:false//拖动
+        }),
+        view: new ol.View({ 
+            center: center,
+            zoom: 7
+        }),
+        target: 'map'
+    });
+
+    // 加载熊猫基地静态地图层
+    map2.addLayer(new ol.layer.Image({
+        source: new ol.source.ImageStatic({
+            url: imgBg, // 熊猫基地地图
+            color:"red",
+            imageExtent: extent2    // 映射到地图的范围
+        })
+    }));
+
+ 	var layer2 = new ol.layer.Vector({
+        source: new ol.source.Vector(),
+        // 注意：把feature上的style，直接移到layer上，避免直接在feature上设置style
+        style: new ol.style.Style({
+            image: new ol.style.Circle({
+                radius: 10,
+                fill: new ol.style.Fill({
+                    color: 'red'
+                })
+            })
+        })
+    });
+	 map2.addLayer(layer2);
+ 	// 在地图上添加一个圆
+    var circle2 = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.transform(
+              [104, 30], 'EPSG:4326', 'EPSG:3857'))
+    })
+    // 此处不再为feature设置style
+    layer2.getSource().addFeature(circle2);
+
+
+
+
+
+
+    // 创建一个用于放置活动图标的layer
+    var activityLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+    
+   /* var style = new ol.style.Style({
+        image: new ol.style.Icon({
+            src: 'img/flag_right.png',
+            anchor: [0, 1],
+            scale: 0.2
+        })
+    });*/
+    
+    
+    
+    
+    
+    
+    
+    
+    // 创建一个活动图标需要的Feature，并设置位置
+    var activity = new ol.Feature({
+        geometry: new ol.geom.Point([center[0]- 550*1000/2 + 390 * 1000, 
+        							center[1]-344*1000/2 + (344 - 145) * 1000])
+    })
+  
+     // 设置Feature的样式，使用小旗子图标
+    activity.setStyle(styles[0]);
+    
+    // 添加一个绘制的线使用的layer
+    var lineLayer = new ol.layer.Vector({
+        source: new ol.source.Vector(),
+        style: new ol.style.Style({
+            stroke: new ol.style.Stroke({
+                color: 'red',
+                size: 1
+            })
+        })
+    })
+    map2.addLayer(lineLayer);
+
+	var lineDraw = new ol.interaction.Draw({
+        type: 'LineString',
+        style: new ol.style.Style({            // 设置绘制时的样式
+            stroke: new ol.style.Stroke({
+                color: 'rgba(102, 0, 255, 1)',
+                size: 10
+            })
+        }),
+        maxPoints: 2,    // 限制不超过4个点
+        source: lineLayer.getSource()    // 注意设置source，这样绘制好的线，就会添加到这个source里
+    });
+    
+    // 监听线绘制结束事件，获取坐标
+    lineDraw.on('drawend', function(event){
+        // event.feature 就是当前绘制完成的线的Feature
+        document.getElementById('points').innerHTML = JSON.stringify(event.feature.getGeometry().getCoordinates());
+        console.log(event.feature.getGeometry())
+    });
+
+    map2.addInteraction(lineDraw);
+    
+   
+    // 添加活动Feature到layer上，并把layer添加到地图中
+    activityLayer.getSource().addFeature(activity);
+    map2.addLayer(activityLayer);
+     // 监听地图点击事件
+  	map2.on('singleclick', function(evt) {
+  	
+      // 获取当前点击坐标，并设置到HTML元素上去
+    var coordinate = evt.coordinate;
+    var hdms = new ol.coordinate.toStringHDMS(ol.proj.transform(
+        coordinate, 'EPSG:3857', 'EPSG:4326'));
+    /*content.innerHTML = '<p>You clicked here:</p><code>' + hdms +
+        '</code>';*/
+    // 设置overlay的位置，从而显示在鼠标点击处
+    //overlay.setPosition(coordinate);
+    createPoints(coordinate)
+  });
+  
+  var n = 0;
+  function createPoints(coordinate){
+  		/*if(n>=4){
+    		n=0;
+    	}*/
+  	   var activity1 = new ol.Feature({
+        	geometry: new ol.geom.Point([coordinate[0],coordinate[1]])
+    	})
+  	   activity1.setStyle(styles[n]);
+  	    //n++;
+  	   activityLayer.getSource().addFeature(activity1);
+       map2.addLayer(activityLayer);
+      
+  }
+  function save(){
+		/*map2.once("postcompose", function(event) {
+        var canvas = event.context.canvas;
+        if (navigator.msSaveBlob) {
+          navigator.msSaveBlob(canvas.msToBlob(), "map.png");
+        } else {
+          canvas.toBlob(function(blob) {
+            FileSaverJS.saveAs(blob, "map.png");
+          });
+        }
+      });
+      map2.renderSync();*/
+  }
+  function changeColor(){
+  	document.getElementById('points').innerHTML 
+  	= JSON.stringify(event.feature.getGeometry().getCoordinates());
+  }
+</script>
+
+
+</body>
+
+</html>

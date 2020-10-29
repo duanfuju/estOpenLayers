@@ -1,0 +1,161 @@
+<!Doctype html>
+<html xmlns=http://www.w3.org/1999/xhtml>
+<head>                  
+    <meta http-equiv=Content-Type content="text/html;charset=utf-8">
+    <meta http-equiv=X-UA-Compatible content="IE=edge,chrome=1">
+    <meta content=always name=referrer>
+    <title>OpenLayers 3地图示例</title>
+    <link href="css/icon/style.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/jquery-2.1.1.js" ></script>
+    <link href="js/openLayers/ol.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/openLayers/ol.js" charset="utf-8"></script>
+</head>
+
+<body>
+	<!--注意：需要设置tabindex，才能使div获得键盘事件-->
+	<!--<div id="map3" tabindex="0" style="width: 100%"></div>-->
+    <div id="map" style="width: 100%;height: 800px;"></div>
+
+
+
+<script type="text/javascript">
+	
+	var iconFont = 'icomoon';
+	var iconFontText = "icon-location"; // equates to fa-trash icon
+	var iconSize = 6 * 7;
+	var colors = ["rgba(102, 0, 255, 1)","rgba(0, 128, 0, 1)","rgba(0, 0, 255, 1)",
+					"rgba(255, 255, 0, 1)","rgba(255, 0, 0, 1)"];
+	var styles = [];
+	for (var i = 0; i < colors.length; i++) {
+		var style = new ol.style.Style({
+	        text: new ol.style.Text({
+	            font: 'Normal ' + iconSize + 'px ' + iconFont,
+	            text: iconFontText,
+	            fill: new ol.style.Fill({ color: colors[i] }),
+	            textBaseline: 'bottom'
+	        })
+	    });
+	    styles.push(style);
+	}
+
+	var points = [[11087511.83561339,3831620.763523525],
+				[11230601.95256324,3822448.320129304],
+				[11261788.26010359,3769248.148442821],
+				[11604837.643047463,3807772.4106985503],
+				[11966231.912779776,3536268.086229604],
+				[12230398.282533346,3437205.6975720157],
+				[11685555.144916609,3292281.0919433217],
+				[11247112.350672837,3380336.5485278447],
+				[10942587.229984695,3281274.159870256],
+				[10852697.284721328,3646337.4069602583]];
+
+	
+
+    // 地图设置中心，设置到成都，在本地离线地图 offlineMapTiles刚好有一张zoom为4的成都瓦片
+    var center = ol.proj.transform([104.06667, 30.66667], 'EPSG:4326', 'EPSG:3857');
+    // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    //var extent = [center[0]- 550*1000/2, center[1]-344*1000/2, center[0]+550*1000/2, center[1]+344*1000/2];
+
+	let imgWidth = 1366,imgHeight = 768,imgBg = "img/map20191128.png";
+	//let imgWidth = 550,imgHeight = 344,imgBg = "img/pandaBase.jpg";
+     // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    var extent2 = [center[0]- imgWidth*1000/2*2, 
+				    center[1]-imgHeight*1000/2*2, 
+				    center[0]+imgWidth*1000/2*2, 
+				    center[1]+imgHeight*1000/2*2];
+
+    //创建地图
+    var map2 = new ol.Map({
+    	 // 让所有的zoom开关都设置为false
+        interactions: ol.interaction.defaults({
+        	/*带有Zoom都是缩放*/
+            doubleClickZoom: false,
+            mouseWheelZoom: false,
+            shiftDragZoom: false,
+            pinchZoom:false,
+            altShiftDragRotate:false, 
+            pinchRotate:false,
+            dragPan:false//拖动
+        }),
+        view: new ol.View({ 
+            center: center,
+            zoom: 7
+        }),
+        target: 'map'
+    });
+
+    // 加载熊猫基地静态地图层
+    map2.addLayer(new ol.layer.Image({
+        source: new ol.source.ImageStatic({
+            url: imgBg, // 熊猫基地地图
+            color:"red",
+            imageExtent: extent2    // 映射到地图的范围
+        })
+    }));
+
+ 	// 创建一个用于放置活动图标的layer
+    var activityLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+    
+     var features = new Array(points.length);
+    for (var j = 0; j < points.length; j++) {
+		var point = points[j];
+		var feature = new ol.Feature({
+        	geometry: new ol.geom.Point([point[0],point[1]])
+    	})
+  	   feature.setStyle(styles[0]);
+	   features[j] = feature;
+	}
+     
+    var vectorSource = new ol.source.Vector({
+	  features: features
+	});
+	var markerVectorLayer = new ol.layer.Vector({
+	  source: vectorSource,
+	});
+     map2.addLayer(markerVectorLayer);
+
+     // 监听地图点击事件
+  	map2.on('singleclick', function(evt) {
+  	
+      // 获取当前点击坐标，并设置到HTML元素上去
+    var coordinate = evt.coordinate;
+    var hdms = new ol.coordinate.toStringHDMS(ol.proj.transform(
+        coordinate, 'EPSG:3857', 'EPSG:4326'));
+    /*content.innerHTML = '<p>You clicked here:</p><code>' + hdms +
+        '</code>';*/
+    // 设置overlay的位置，从而显示在鼠标点击处
+    //overlay.setPosition(coordinate);
+    //createPoints(coordinate)
+  });
+  
+  var n = 0;
+  function createPoints(coordinate){
+  		/*if(n>=4){
+    		n=0;
+    	}*/
+  	   
+  	    //n++;
+  	   activityLayer.getSource().addFeature(activity1);
+       map2.addLayer(activityLayer);
+       
+       
+       
+       
+      
+  }
+  
+  function dradLineString(polygonArr){
+  	var myPolygon = new ol.geom.LineString(polygonArr);//绘制多边形（点集数组结构是[[[xxxx,xxxx],[   xxxx,xxxx],.....]]）
+	var feature = new ol.Feature(myPolygon);
+	feature.setStyle(lineStyle)
+	zoneSource.addFeature(feature);
+  }
+  
+</script>
+
+
+</body>
+
+</html>

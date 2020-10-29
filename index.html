@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width = device-width,initial-scale=1,user-scalable=no">
+		<title></title>
+		<script type="text/javascript" src="js/jquery-2.1.1.js" ></script>
+		
+		<link rel="stylesheet" type="text/css" href="js/datePicker/dateRange.css"/>
+		<link rel="stylesheet" type="text/css" href="js/datePicker/monthPicker.css"/>
+
+		<script type="text/javascript" src="js/datePicker/dateRange.js"></script>
+		<script type="text/javascript" src="js/datePicker/monthPicker.js"></script>
+
+		<script type="text/javascript" src="js/echarts/echarts-all.js"></script>
+		<script type="text/javascript" src="js/echarts/echartsConfig.js"></script>
+		
+		<link rel="stylesheet" type="text/css" href="js/select2/css/select2.css"/>
+		<script type="text/javascript" src="js/select2/js/select2.js"></script>
+		
+		<script type="text/javascript" src="js/index.js" charset="utf-8"></script>
+	</head>
+	<body onload="load()">
+		<div class="head redBorder" style=" height: 30px;">
+			<table style="width: 80%;">
+				<tr>
+					<td>路线名称：</td>
+					<td>
+						<select name="" id="test" style="width: 100px;">
+					        <option value="0">java</option>
+					        <option value="1">c</option>
+					        <option value="2">php</option>
+					        <option value="3">python</option>
+					        <option value="4">javascript</option>
+					    </select>
+					</td>
+					
+					<td>台区名称：</td>
+					<td><input type="text" id="zoneAreaName"/></td>
+					<!--<td><input type="date" id="startDate"/> ~ <input type="date" id="endDate"/></td>-->
+					<td colspan="3">
+						 <div class="ta_date" id="div_date_demo3">
+							<span class="date_title" id="date_demo3"></span>
+							<a class="opt_sel" id="input_trigger_demo3" href="#">
+								<i class="i_orderd"></i>
+							</a>
+						</div>
+						<div id="datePicker"></div>
+					</td>
+					<td><input type="button" id="search" value="查询" onclick="search()"></td>
+					
+				</tr>
+			</table>
+		</div>
+	    <div class="container redBorder" style="width: 100%;height:auto;padding: 0px;">
+	        <table class="top redBorder" style="width: 100%;">
+	        	<tr>
+		        	<td class="left redBorder" style="">
+					     <iframe id="leftIframe" frameborder="0" scrolling="no" src="charts/echarts_dyjjyc.html" 
+					     	width="100%" style="min-height:300px ;"></iframe>
+			        </td>
+		        </tr>
+		        <tr>
+		        	<td class="right redBorder" style="">
+					     <iframe id="rightIframe" frameborder="0" scrolling="no" src="charts/echarts_dyhglyc.html" 
+					     	width="100%" style="min-height:300px ;"></iframe>
+			        </td>
+		        </tr>
+	        </table>
+	        <!--<div class="foot" style="height: 500px;">
+	        	地图
+	        </div>-->
+	    </div>
+	</body>
+	<script>
+		 $("#test").select2();
+		var dateRange = new pickerDateRange('date_demo3', {
+				aRecent7Days : 'aRecent7DaysDemo3', //最近7天
+				isTodayValid : false,
+				startDate : getCurrentMonthFirst(),
+//				endDate : getCurrentMonthLast(),
+				endDate : "2020-11-25",
+				stopToday : false,
+        		isTodayValid : true,
+				//needCompare : true,
+				//isSingleDay : true,
+				//shortOpr : true,
+				defaultText : ' 至 ',
+				inputTrigger : 'input_trigger_demo3',
+				theme : 'ta',
+				success : function(obj) {
+					alert(JSON.stringify(obj))
+					//$("#dCon_demo3").html('开始时间 : ' + obj.startDate + '<br/>结束时间 : ' + obj.endDate);
+				}
+			});
+		function search(){
+			let zoneAreaName = $("#zoneAreaName").val();
+			let startDate = $("#startDate").val();
+			let endDate = $("#endDate").val();
+			let param = {
+				zoneAreaName:zoneAreaName,
+				startDate:startDate,
+				endDate:endDate,
+			};
+			//验证查询的时间
+			if(vaildTime()){
+				//调用子页面方法
+				document.getElementById("leftIframe").contentWindow.update(param);
+				document.getElementById("rightIframe").contentWindow.update(param);
+			}else{
+				alert("开始时间和结束时间存在问题")
+			}
+			
+		}
+		function vaildTime(){
+			let startDate = $("#startDate").val();
+			let endDate = $("#endDate").val();
+			if(getDays(startDate,endDate)>1){
+				return true;
+			}else{
+				return false;
+			}
+		}
+		function getDays(strDateStart,strDateEnd){
+	       var strSeparator = "-"; //日期分隔符
+	       var oDate1;
+	       var oDate2;
+	       var iDays;
+	       oDate1= strDateStart.split(strSeparator);
+	       oDate2= strDateEnd.split(strSeparator);
+	       var strDateS = new Date(oDate1[0], oDate1[1]-1, oDate1[2]);
+	       var strDateE = new Date(oDate2[0], oDate2[1]-1, oDate2[2]);
+	       iDays = parseInt(Math.abs(strDateS - strDateE ) / 1000 / 60 / 60 /24);//把相差的毫秒数转换为天数
+	       return iDays+1 ;
+	    }
+		function load(){
+			$("#startDate").val(getCurrentMonthFirst());
+			$("#endDate").val(getCurrentMonthLast());
+			$("#zoneAreaName").val("台区默认值");
+			search();
+		}
+		function getCurrentMonthFirst(){
+	        var date = new Date();
+	        date.setDate(1);
+	        var month = parseInt(date.getMonth()+1);
+	        var day = date.getDate();
+	        if (month < 10) {
+	            month = '0' + month
+	        }
+	        if (day < 10) {
+	            day = '0' + day
+	        }
+	        return date.getFullYear() + '-' + month + '-' + day;
+	    }
+		function getCurrentMonthLast(){
+	        var date=new Date();
+	        var currentMonth=date.getMonth();
+	        var nextMonth=++currentMonth;
+	        var nextMonthFirstDay=new Date(date.getFullYear(),nextMonth,1);
+	        var oneDay=1000*60*60*24;
+	        var lastTime = new Date(nextMonthFirstDay-oneDay);
+	        var month = parseInt(lastTime.getMonth()+1);
+	        var day = lastTime.getDate();
+	        if (month < 10) {
+	            month = '0' + month
+	        }
+	        if (day < 10) {
+	            day = '0' + day
+	        }
+	        return date.getFullYear() + '-' + month + '-' + day;
+	    }
+	</script>
+	<style>
+		body {
+		  margin: 0;
+		  padding: 0;
+		}
+		table,tr,td {
+		  margin: 0;
+		  padding: 0;
+		  border-spacing: 0px;
+		}
+		.redBorder{
+			border: 1px solid red;
+		}
+		#search{
+			width: 65px;
+			height: 30px;
+			box-shadow: none;
+			font-size: 12px;
+			box-sizing: border-box;
+		    border-width: 1px;
+		    border-style: solid;
+			color: rgb(64, 158, 255);
+			background: inherit;
+			background-color: rgba(236, 245, 255, 1);
+			border-color: rgba(179, 216, 255, 1);
+			border-radius: 4px;
+		}
+	</style>
+</html>

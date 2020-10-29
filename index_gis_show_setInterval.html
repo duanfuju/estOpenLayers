@@ -1,0 +1,235 @@
+<!Doctype html>
+<html xmlns=http://www.w3.org/1999/xhtml>
+<head>                  
+    <meta http-equiv=Content-Type content="text/html;charset=utf-8">
+    <meta http-equiv=X-UA-Compatible content="IE=edge,chrome=1">
+    <meta content=always name=referrer>
+    <title>OpenLayers 3地图示例</title>
+    <link href="css/icon/style.css" rel="stylesheet" type="text/css" />
+    <link href="css/map-pop.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/jquery-2.1.1.js" ></script>
+    <link href="js/openLayers/ol.css" rel="stylesheet" type="text/css" />
+    <script type="text/javascript" src="js/openLayers/ol.js" charset="utf-8"></script>
+</head>
+
+<body>
+	<input type="button" value="播放" onclick="play()" />
+	<input type="button" value="暂停" onclick="stop()" />
+	<!--注意：需要设置tabindex，才能使div获得键盘事件-->
+	<!--<div id="map3" tabindex="0" style="width: 100%"></div>-->
+    <div id="map" style="width: 100%;height: 800px;"></div>
+    <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+        <div id="popup-content" style="font-size: 12px;height: 120px; word-wrap:break-word;  word-break:break-all;  overflow: auto;  "></div>
+    </div>
+
+<script type="text/javascript">
+	//设置字体
+	var iconFont = 'icomoon';
+	//设置字体的指定图标
+	var iconFontText = "icon-location"; // equates to fa-trash icon
+	var iconSize = 6 * 7;
+	var colors = ["rgba(102, 0, 255, 1)","rgba(0, 128, 0, 1)","rgba(0, 0, 255, 1)",
+					"rgba(255, 255, 0, 1)","rgba(255, 0, 0, 1)"];
+	var styles = [];
+	for (var i = 0; i < colors.length; i++) {
+		var style = new ol.style.Style({
+	        text: new ol.style.Text({
+	            font: 'Normal ' + iconSize + 'px ' + iconFont,
+	            text: iconFontText,
+	            fill: new ol.style.Fill({ color: colors[i] }),
+	            textBaseline: 'bottom'
+	        })
+	    });
+	    styles.push(style);
+	}
+
+	var points = [[10988439.892327264,3859408.814401827],[11149874.896065557,3608287.685034672],[11117261.813760905,3494141.7290159366],[10988439.892327264,3215299.4498316133],[11433609.145060131,3378365.085291478],[11236299.720928507,3737109.550484161],[11787461.67776533,3746893.490104663],[11950527.38787073,3171271.721539352],[12131530.270850027,3870823.404405285],[12382651.28824888,3680036.5818054853]];
+
+	
+
+    // 地图设置中心，设置到成都，在本地离线地图 offlineMapTiles刚好有一张zoom为4的成都瓦片
+    var center = ol.proj.transform([104.06667, 30.66667], 'EPSG:4326', 'EPSG:3857');
+    // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    //var extent = [center[0]- 550*1000/2, center[1]-344*1000/2, center[0]+550*1000/2, center[1]+344*1000/2];
+
+	let imgWidth = 1366,imgHeight = 768,imgBg = "img/map20191129.png";
+	//let imgWidth = 550,imgHeight = 344,imgBg = "img/pandaBase.jpg";
+     // 计算熊猫基地地图映射到地图上的范围，图片像素为 550*344，保持比例的情况下，把分辨率放大一些
+    var extent2 = [center[0]- imgWidth*1000/2*2, 
+				    center[1]-imgHeight*1000/2*2, 
+				    center[0]+imgWidth*1000/2*2, 
+				    center[1]+imgHeight*1000/2*2];
+
+    //创建地图
+    var map2 = new ol.Map({
+    	 // 让所有的zoom开关都设置为false
+        interactions: ol.interaction.defaults({
+        	/*带有Zoom都是缩放*/
+            doubleClickZoom: false,
+            mouseWheelZoom: false,
+            shiftDragZoom: false,
+            pinchZoom:false,
+            altShiftDragRotate:false, 
+            pinchRotate:false,
+            dragPan:false,//拖动
+            zoom: false
+        }),
+         // 设置地图控件，默认的三个控件都不显示
+        controls: ol.control.defaults({
+            attribution: false,
+            rotate: false,
+            zoom: false
+        }),
+        view: new ol.View({ 
+            center: center,
+            zoom: 7
+        }),
+        target: 'map'
+    });
+
+    // 加载静态地图层
+    map2.addLayer(new ol.layer.Image({
+        source: new ol.source.ImageStatic({
+            url: imgBg, // 地图
+            color:"red",
+            imageExtent: extent2    // 映射到地图的范围
+        })
+    }));
+
+ 	// 创建一个用于放置活动图标的layer
+    var activityLayer = new ol.layer.Vector({
+        source: new ol.source.Vector()
+    });
+    
+     var features = new Array(points.length);
+    for (var j = 0; j < points.length; j++) {
+		var point = points[j];
+		var feature = new ol.Feature({
+        	geometry: new ol.geom.Point([point[0],point[1]])
+    	})
+  	   feature.setStyle(styles[0]);
+	   features[j] = feature;
+	}
+     
+    var vectorSource = new ol.source.Vector({
+	  features: features
+	});
+	var markerVectorLayer = new ol.layer.Vector({
+	  source: vectorSource,
+	});
+     map2.addLayer(markerVectorLayer);
+
+  
+   // 弹出窗容器DIV
+    var container = document.getElementById("popup");
+    // 弹出窗内容DIV
+    var content = document.getElementById("popup-content");
+    // 弹出窗关闭
+    var popupCloser = document.getElementById("popup-closer");
+    var overlay = new ol.Overlay({
+        //设置弹出框的容器
+        element : container,
+        //是否自动平移，即假如标记在屏幕边缘，弹出时自动平移地图使弹出框完全可见
+        autoPan : true,
+        autoPanAnimation : {
+            duration : 250
+        //当Popup超出地图边界时，为了Popup全部可见，地图移动的速度. 
+        }
+    });
+  // openlayer4只有针对整个地图事件监听，可以通过以下方式达到对feature监听，也可对feature自定义点击事件。
+	map2.on('click', function(e) {
+	    //在点击时获取像素区域
+	    var pixel = map2.getEventPixel(e.originalEvent);
+	    map2.forEachFeatureAtPixel(pixel, function(feature) {
+	        //coodinate存放了点击时的坐标信息
+	        var coodinate = e.coordinate;
+	        //console.log(coodinate);
+	        //设置弹出框内容，可以HTML自定义
+	        content.innerHTML = getInfo(coodinate);
+	        //设置overlay的显示位置
+	        overlay.setPosition(coodinate);
+	        //显示overlay
+	        map2.addOverlay(overlay);
+	    });
+	});
+	function getInfo(coodinate){
+		var html = "<table>"
+					+"<tr><td>经纬度</td><td>"+coodinate[0]+"<br/>"+coodinate[1]+"</td><tr>"
+					+"<tr><td>日期:</td><td>2019-11-14</td><tr>"
+					+"<tr><td>极大值:</td><td>230V</td><tr>"
+					+"<tr><td>极小值:</td><td>180V</td><tr>"
+					+"<tr><td>合格率:</td><td>89%</td><tr>"
+					+"</table>";
+		return html;
+	}
+	popupCloser.addEventListener('click', function() {
+	    overlay.setPosition(undefined);
+	});
+	/**
+	* 为map添加鼠标移动事件监听，当指向标注时改变鼠标光标状态
+	*/
+	map2.on('pointermove', function (e) {
+	    var pixel = map2.getEventPixel(e.originalEvent);
+	    var hit = map2.hasFeatureAtPixel(pixel);
+	    map2.getTargetElement().style.cursor = hit ? 'pointer' : '';
+	})
+  
+  
+  
+  
+  
+  var timer;
+  /**
+   * 播放
+   */
+  function play(){
+  	 
+  	  timer = setInterval(changeColor,2000);
+  	 
+  }
+  
+  /**
+   * 
+   */
+  function changeColor(){
+  	var features = getFeatures(map2);
+  	for(var i=0;i<features.length;i++){
+  		features[i].setStyle(styles[Math.floor(Math.random()*5)]);
+  	}
+  }
+  /**
+   * 暂停
+   */
+  function stop(){
+  	//点击按钮，停止计时器
+  	clearInterval(timer);
+  }
+  
+	/**
+	 * 获取所有的标注点
+	 * @param {Object} map
+	 */
+	function getFeatures(map){
+	   var layers = map.getLayers();
+	   for(var i=0;i<layers.values_.length;i++){
+	       var source = layers.array_[i].getSource();
+	       if(source !== undefined){
+		       	if(source instanceof ol.source.Vector){
+		          var features = source.getFeatures();
+		          if(features.length>0){
+		          		return features;
+				  }else{
+				  	return null;
+				  }
+		       }
+	       }
+	   }
+	   return null;
+	}
+</script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,149 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>ECharts</title>
+<script type="text/javascript" src="../js/echarts/echarts-all.js"></script>
+<script type="text/javascript">
+function load(data) {
+	if(data=='null'){
+		return;
+	}
+     var dom=document.getElementById('main');
+     var myChart = echarts.init(dom);
+     option = {
+	    title: {
+	        text: '电压合格率预测',
+	        x:'right',
+        	y: 'top',
+	    },
+	    tooltip: {
+	        trigger: 'axis',
+	        formatter: function (params) {
+	        	//alert(JSON.stringify(params))
+	        	params = params[2];
+	            var color = params.color;//图例颜色
+	            var htmlStr ='<div>';
+	            htmlStr += params.name + '<br/>';//x轴的名称
+	            //为了保证和原来的效果一样，这里自己实现了一个点的效果
+	            htmlStr += '<span style="margin-right:5px;display:inline-block;width:10px;height:10px;border-radius:5px;background-color:'+color+';"></span>';
+	            //添加一个汉字，这里你可以格式你的数字或者自定义文本内容
+	            htmlStr += params.seriesName + '：'+params.value + '%';
+	            htmlStr += '</div>';
+	            return htmlStr; 
+	        }
+	    },
+	    legend: {
+	        data:[
+	        {
+				name:'100%',
+				icon : 'circle',
+				textStyle: {
+					color: 'red'
+				}
+			},
+			{
+				name:'80%',
+				icon : 'circle',
+				textStyle: {
+					color: 'blue'
+				}
+			},
+			{
+				name:'电压合格率',
+				icon : 'circle',
+				textStyle: {
+					color: 'black'
+				}
+			}]
+	    },
+	    grid: {
+	        x:30,
+            y:50,
+            x2:10,
+            y2:50,
+	        bottom: '3%',
+	        containLabel: true
+	    },
+	    toolbox: {
+	        feature: {
+	            saveAsImage: {}
+	        }
+	    },
+	    xAxis: {
+	        type: 'category',
+	        boundaryGap: false,
+	        data: data.xAxis
+	    },
+	    yAxis: {
+	        type: 'value',
+	        min:0,
+	        max:100,
+	        nameTextStyle :{
+	        	align:'left'
+	        },
+	        splitNumber:10,
+	        show: true,    //显示纵轴false-不显示，true-显示
+   			name:'电压合格率(%)'   //这里是纵轴标题
+	    },
+	    series: data.series
+	};
+     myChart.setOption(option);
+};
+function update(params){
+	//alert("电压极值预测"+JSON.stringify(params));
+	
+	let data = [];
+	data.xAxis = [];
+	data.series = [];
+	let daycount = getDays(params.startDate,params.endDate)
+	for (var i = 0; i < daycount; i++) {
+		data.xAxis.push(i+1);
+	}
+	//symbol:'none',  //这句就是去掉点的  
+    //smooth:true,  //这句就是让曲线变平滑的 
+	data.series.push({name:'100%',type:'line',symbol:'none',data:getMax(daycount)});
+	data.series.push({name:'80%',type:'line',symbol:'none',data:getMin(daycount)});
+	data.series.push({name:'电压合格率',type:'line',symbol:'none',data:getRandom(daycount)});
+	load(data);
+};
+
+function getMin(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			sdata.push(80);
+		}
+	return sdata;
+}
+function getMax(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			sdata.push(100);
+		}
+	return sdata;
+}
+function getRandom(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			let num = parseInt(Math.random()*60,10)+40;
+			sdata.push(num);
+		}
+	return sdata;
+}
+function getDays(strDateStart,strDateEnd){
+       var strSeparator = "-"; //日期分隔符
+       var oDate1;
+       var oDate2;
+       var iDays;
+       oDate1= strDateStart.split(strSeparator);
+       oDate2= strDateEnd.split(strSeparator);
+       var strDateS = new Date(oDate1[0], oDate1[1]-1, oDate1[2]);
+       var strDateE = new Date(oDate2[0], oDate2[1]-1, oDate2[2]);
+       iDays = parseInt(Math.abs(strDateS - strDateE ) / 1000 / 60 / 60 /24);//把相差的毫秒数转换为天数
+       return iDays+1 ;
+    }
+</script>
+</head>
+<body onload="">
+<div id="main" style="height: 300px; margin: 0 auto "></div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>ECharts</title>
+<script type="text/javascript" src="../js/echarts/echarts-all.js"></script>
+<script type="text/javascript">
+function load(data) {
+	if(data=='null'){
+		return;
+	}
+     var dom=document.getElementById('main');
+     var myChart = echarts.init(dom);
+     option = {
+	    title: {
+	        text: '电压极值预测',
+	         x:'right',
+        	y: 'top',
+	    },
+	    tooltip: {
+	        trigger: 'axis',
+	    },
+	    legend: {
+	        data:['上限阈值','下限阈值','A向电压极大值','A向电压极小值',
+	        'B向电压极大值','B向电压极小值','C向电压极大值','C向电压极小值']
+	    },
+	    grid: {
+	        x:30,
+            y:50,
+            x2:10,
+            y2:50,
+	        bottom: '3%',
+	        containLabel: true
+	    },
+	    toolbox: {
+	        feature: {
+	            saveAsImage: {}
+	        }
+	    },
+	    xAxis: {
+	        type: 'category',
+	        boundaryGap: false,
+	        data: data.xAxis,
+	        axisLabel:{
+	        	interval:data.xAxis.axisLabel.interval ,
+	        	formatter: function (value) {
+				    // 格式化成月/日，只在第一个刻度显示年份
+				    var date = new Date(value);
+				    var texts = date.getDate();
+				    if(date.getDate() == 1){
+				    	texts = date.getDate()+"\n"
+				    	+ date.getFullYear()
+				    	+ "-" + (date.getMonth()+1);
+				    }
+				    return texts;
+				}
+	        }
+	    },
+	    yAxis: {
+	        type: 'value',
+	        min:0,
+	        max:500,
+	        splitNumber:10,
+	        show: true,    //显示纵轴false-不显示，true-显示
+   			name:'电压(V)'   //这里是纵轴标题
+	    },
+	    series: data.series
+	};
+     myChart.setOption(option);
+};
+function update(params){
+	//alert("电压极值预测"+JSON.stringify(params));
+	
+	let data = [];
+	data.xAxis = [];
+	data.series = [];
+	let days = getDays(params.startDate,params.endDate).split(",");
+	/*for (var i = 0; i < days.length; i++) {
+		data.xAxis.push({value:days[i], index:i});
+	}*/
+	data.xAxis = days;
+	let daycount = days.length;
+	//symbol:'none',  //这句就是去掉点的  
+    //smooth:true,  //这句就是让曲线变平滑的 
+	data.series.push({name:'上限阈值',type:'line',symbol:'none',data:getMax(daycount)});
+	data.series.push({name:'下限阈值',type:'line',symbol:'none',data:getMin(daycount)});
+	data.series.push({name:'A向电压极大值',type:'line',symbol:'none',data:getRandom(daycount)});
+	data.series.push({name:'A向电压极小值',type:'line',symbol:'none',data:getRandom(daycount)});
+	data.series.push({name:'B向电压极大值',type:'line',symbol:'none',data:getRandom(daycount)});
+	data.series.push({name:'B向电压极小值',type:'line',symbol:'none',data:getRandom(daycount)});
+	data.series.push({name:'C向电压极大值',type:'line',symbol:'none',data:getRandom(daycount)});
+	data.series.push({name:'C向电压极小值',type:'line',symbol:'none',data:getRandom(daycount)});
+	//debugger
+	data.xAxis.axisLabel = [];
+	data.xAxis.axisLabel.interval = 0;
+	if(daycount>100&&daycount<200){
+		data.xAxis.axisLabel.interval = 3;
+	}else if(daycount>200&&daycount<300){
+		data.xAxis.axisLabel.interval = 4;
+	}else if(daycount>300){
+		data.xAxis.axisLabel.interval = 5;
+	}
+	load(data);
+};
+
+function getMin(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			sdata.push(180);
+		}
+	return sdata;
+}
+function getMax(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			sdata.push(250);
+		}
+	return sdata;
+}
+function getRandom(daycount){
+	let sdata = [];
+	for (var i = 0; i < daycount; i++) {
+			let num = parseInt(Math.random()*250,10)+180;
+			sdata.push(num);
+		}
+	return sdata;
+}
+/*function getDays(strDateStart,strDateEnd){
+       var strSeparator = "-"; //日期分隔符
+       var oDate1;
+       var oDate2;
+       var iDays;
+       oDate1= strDateStart.split(strSeparator);
+       oDate2= strDateEnd.split(strSeparator);
+       var strDateS = new Date(oDate1[0], oDate1[1]-1, oDate1[2]);
+       var strDateE = new Date(oDate2[0], oDate2[1]-1, oDate2[2]);
+       iDays = parseInt(Math.abs(strDateS - strDateE ) / 1000 / 60 / 60 /24);//把相差的毫秒数转换为天数
+       return iDays+1 ;
+}
+*/
+// 获取间隔天数
+function getDays(day1, day2) {
+	// 获取入参字符串形式日期的Date型日期
+	var d1 = day1.getDate();
+	var d2 = day2.getDate();
+ 
+	// 定义一天的毫秒数
+	var dayMilliSeconds  = 1000*60*60*24;
+	
+	// 获取输入日期的毫秒数
+	var d1Ms = d1.getTime();
+	var d2Ms = d2.getTime();
+	
+	// 定义返回值
+	var ret;
+	
+	// 对日期毫秒数进行循环比较，直到d1Ms 大于等于 d2Ms 时退出循环
+	// 每次循环结束，给d1Ms 增加一天
+	for (d1Ms; d1Ms <= d2Ms; d1Ms += dayMilliSeconds) {
+	
+		// 如果ret为空，则无需添加","作为分隔符
+		if (!ret) {
+			// 将给的毫秒数转换为Date日期
+			var day = new Date(d1Ms);
+			
+			// 获取其年月日形式的字符串
+			ret = day.getYMD();
+		} else {
+		
+		// 否则，给ret的每个字符日期间添加","作为分隔符
+			var day = new Date(d1Ms);
+			ret = ret + ',' + day.getYMD();
+		}
+	}
+ 
+	return ret; // 或可换为return ret;
+}
+ 
+// 给Date对象添加getYMD方法，获取字符串形式的年月日
+Date.prototype.getYMD = function(){
+    var retDate = this.getFullYear() + "-";  // 获取年份。
+    retDate += this.getMonth() + 1 + "-";    // 获取月份。          
+    retDate += this.getDate();               // 获取日。
+    return retDate;                          // 返回日期。
+}
+ 
+// 给String对象添加getDate方法，使字符串形式的日期返回为Date型的日期
+String.prototype.getDate = function(){
+	var strArr = this.split('-');
+	var date = new Date(strArr[0], strArr[1] - 1, strArr[2]);
+	return date;
+}
+</script>
+</head>
+<body onload="">
+<div id="main" style="height: 300px; margin: 0 auto "></div>
+</body>
+</html>
